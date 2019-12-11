@@ -12,6 +12,40 @@ namespace Dapper.FluentMap.Dommel.Resolvers
     /// </summary>
     public class DommelKeyPropertyResolver : DommelMapper.IKeyPropertyResolver
     {
+        public KeyPropertyInfo[] ResolveKeyProperties(Type type)
+        {
+            IEntityMap entityMap;
+            if (!FluentMapper.EntityMaps.TryGetValue(type, out entityMap))
+            {
+                //return DommelMapper.Resolvers.Default.KeyPropertyResolver.ResolveKeyProperty(type, out isIdentity);
+            }
+
+            var mapping = entityMap as IDommelEntityMap;
+            if (mapping != null)
+            {
+                var keyPropertyMaps = entityMap.PropertyMaps.OfType<DommelPropertyMap>().Where(e => e.Key).ToList();
+
+                if (keyPropertyMaps.Count == 1)
+                {
+                    var keyPropertyMap = keyPropertyMaps[0];
+                    isIdentity = keyPropertyMap.Identity;
+                    return keyPropertyMap.PropertyInfo;
+                }
+
+                if (keyPropertyMaps.Count > 1)
+                {
+                    var msg = string.Format("Found multiple key properties on type '{0}'. This is not yet supported. The following key properties were found:{1}{2}",
+                                            type.FullName,
+                                            Environment.NewLine,
+                                            string.Join(Environment.NewLine, keyPropertyMaps.Select(t => t.PropertyInfo.Name)));
+
+                    throw new Exception(msg);
+                }
+            }
+
+            throw new NotImplementedException();
+        }
+
         /// <inheritdoc/>
         public PropertyInfo ResolveKeyProperty(Type type)
         {
